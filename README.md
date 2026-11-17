@@ -49,8 +49,7 @@
 git clone https://github.com/a998151/magazine-epub.git
 cp -R magazine-epub/skills/magazine-epub ~/.agents/skills/
 
-# 或者直接解压 release 里的 magazine-epub-skill.zip
-unzip magazine-epub-skill.zip -d ~/.agents/skills/
+# 其他 harness（~/.codex/skills、~/.claude/skills 等）同理，放到对应根目录
 ```
 
 装完新开一个会话，说一句「把这个 epub 做成杂志版」就会触发。
