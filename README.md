@@ -166,6 +166,20 @@ magazine-epub/
 
 ---
 
+## 下一步：转成 HTML
+
+杂志版 EPUB 可以再转成**单文件、可离线打开**的 HTML 阅读器（双击即读，带目录抽屉、
+主题切换、插图放大），用配套的 [`magazine-html`](https://github.com/a998151/magazine-html) skill：
+
+```bash
+git clone https://github.com/a998151/magazine-html.git
+cp -R magazine-html/skills/magazine-html ~/.agents/skills/
+```
+
+两条 skill 是一条流水线的两段：`原始 EPUB →（magazine-epub）→ 杂志版 EPUB →（magazine-html）→ 单文件 HTML`。
+
+---
+
 ## License
 
 尚未指定 License。公开发布前请自行添加一个（如 MIT），或在 README 里注明保留所有权利。
