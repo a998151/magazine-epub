@@ -42,12 +42,12 @@
 
 ## 安装
 
-仓库里的 skill 放在 `skill/` 目录，结构符合 agents.md 规范。把它放进任意 harness 的 skills 根目录即可：
+仓库里的 skill 放在 `skills/magazine-epub/` 目录（目录名与 skill 名一致），结构符合 agents.md 规范。把它放进任意 harness 的 skills 根目录即可：
 
 ```bash
 # 通用（Codex / Cursor / Claude Code / MCode 等读 ~/.agents/skills 的）
 git clone https://github.com/a998151/magazine-epub.git
-cp -R magazine-epub/skill ~/.agents/skills/magazine-epub
+cp -R magazine-epub/skills/magazine-epub ~/.agents/skills/
 
 # 或者直接解压 release 里的 magazine-epub-skill.zip
 unzip magazine-epub-skill.zip -d ~/.agents/skills/
@@ -116,11 +116,14 @@ inspect_epub.py                build_epub.py
       └─ 疑似重复目录页               ├─ 生成刊头开篇页 opener.html
                                      ├─ 章节扉页：章号 + 章名 + 插图 + 图注
                                      ├─ 插画压图入包 images/
-                                     ├─ manifest / spine / NCX 同步更新
+                                     ├─ manifest / spine / NCX / guide 同步更新
                                      ├─ 注入 magazine.css
                                      ├─ 打包（mimetype 首条且不压缩）
                                      └─ 结构自检 → 不过则退出码非 0
 ```
+
+自检里有一条**正文逐字比对**：构建脚本在动手改结构前给每章正文存底稿，打包后再逐字比一次，
+不一致就报错。这是「不改正文」这条承诺的证据——正则改写很容易悄悄吃掉段落。
 
 **插画怎么配**：先读每章首段和全文关键词计数，找出该章**最具体**的物象（"矿×37 + 教堂钟声" → 画矿与钟楼，而不是画风景），已有插画先复用，缺了才补。一次批量生成时重复同一段风格描述词，模型才会给出一套成图。
 
@@ -146,17 +149,18 @@ inspect_epub.py                build_epub.py
 magazine-epub/
 ├── README.md
 ├── docs/                      演示截图
-└── skill/
-    ├── SKILL.md               触发条件 / 执行流程 / 输出契约 / 失败处理
-    ├── agents/openai.yaml     跨 harness 展示元信息
-    ├── scripts/
-    │   ├── inspect_epub.py    体检器
-    │   └── build_epub.py      配置驱动构建器（打包 + 自检）
-    └── references/
-        ├── magazine.css       杂志版样式表（构建时注入）
-        ├── page.css           @page 分页样式
-        ├── recipes.md         配置字段表 + 插画/图注策划方法
-        └── compatibility.md   阅读器兼容要点
+└── skills/
+    └── magazine-epub/         目录名 = skill 名，可直接 cp 到任意 skills 根目录
+        ├── SKILL.md           触发条件 / 执行流程 / 输出契约 / 失败处理
+        ├── agents/openai.yaml 跨 harness 展示元信息
+        ├── scripts/
+        │   ├── inspect_epub.py 体检器
+        │   └── build_epub.py   配置驱动构建器（打包 + 自检）
+        └── references/
+            ├── magazine.css   杂志版样式表（构建时注入）
+            ├── page.css       @page 分页样式
+            ├── recipes.md     配置字段表 + 插画/图注策划方法
+            └── compatibility.md 阅读器兼容要点
 ```
 
 **依赖**：Python 3（标准库即可）。图片压缩优先 Pillow，其次 macOS `sips`，最后原样复制。插画生成走 `mcode-tools` 的 `connector__matrix__generate_image`。

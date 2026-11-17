@@ -1,0 +1,3 @@
+interface:
+  display_name: "Magazine EPUB"
+  short_description: "Rebuild an existing EPUB into a magazine-style layout with per-chapter illustrations"
