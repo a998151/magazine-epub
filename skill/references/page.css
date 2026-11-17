@@ -1,0 +1,16 @@
+/* 分页样式：供支持 @page 的阅读器（Kindle / Apple Books / 打印）使用；
+   epubjs 等连续滚动阅读器忽略本表。 */
+
+@page {
+    margin-top: 8%;
+    margin-bottom: 8%;
+    margin-left: 7%;
+    margin-right: 7%;
+}
+
+@page :first {
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+    margin-right: 0;
+}
