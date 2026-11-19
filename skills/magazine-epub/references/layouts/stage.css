@@ -1,0 +1,22 @@
+/* 黑场开篇：题头与原画合成一个整屏段落。 */
+body { line-height: 1.88; }
+body h1.chapter-title, body .book-title {
+  box-sizing: border-box; margin: .35em 0 0; padding: .68em 8% .48em;
+  background: #252624; color: #f5ebd6; border: 0; font-size: 2.75em;
+  font-weight: 800; line-height: 1.18; letter-spacing: .07em; text-align: left;
+}
+body .book-title em { color: inherit; }
+.plate {
+  box-sizing: border-box; margin: 0 0 2em; padding: 0 8% 1.2em;
+  background: #252624; color: #f5ebd6; border: 0;
+}
+.plate img { display: block; width: 100%; height: auto; }
+.plate .caption, .plate figcaption {
+  margin: .65em 0 0; padding: .55em 0 0; border: 0; border-top: 1px solid #beab87;
+  font-size: .79em; text-align: left; letter-spacing: .04em; opacity: 1;
+}
+.caption-en, figcaption .en { display: block; margin-left: 0; }
+body > .plate + p:not(.source-spacing),
+body > .plate + .source-spacing + .source-spacing + p {
+  margin-top: .7em; font-size: 1.08em;
+}

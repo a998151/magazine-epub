@@ -1,0 +1,38 @@
+/* 画入纸面：章首图先于章题，湿墨下缘过渡到阅读器纸色。 */
+body h1.chapter-title, body .chapter-opener h1, body .book-title {
+  text-align: center;
+  font-family: "Kaiti SC", STKaiti, KaiTi, "Songti SC", serif;
+  font-size: 1.85em; line-height: 1.3; letter-spacing: .13em;
+  margin: .6em 0 .8em; padding: 0 0 .85em; border: 0;
+  background: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%2016%22%3E%3Cpath%20d%3D%22M0%208h61m58%200h61M70%208h40m-31%200%2011-5%2011%205-11%205z%22%20fill%3D%22none%22%20stroke%3D%22%238b7950%22%20stroke-width%3D%221%22%2F%3E%3C%2Fsvg%3E") center bottom / 7.1em auto no-repeat;
+}
+.chapter-opener { border: 0; text-align: center; }
+.chapter-index, .chapter-en, .byline { text-align: center; }
+body .book-title em { color: inherit; }
+
+/* 普通文档流可供阅读器回退，支持选择器的阅读器可将旧书第一张章首图提至顶端。 */
+body > .plate.paper-wash-lead {
+  margin: 0 0 .85em; padding: 0; border: 0; page-break-after: avoid;
+}
+@supports selector(body:has(> .plate)) {
+  body:has(> :is(.chapter-title, .chapter-opener, .hero) ~ .plate) {
+    display: flex; flex-direction: column;
+  }
+  body:has(> :is(.chapter-title, .chapter-opener, .hero) ~ .plate)
+    > .plate:not(.plate ~ .plate) {
+    order: -1; margin: 0 0 .85em; padding: 0; border: 0;
+    page-break-after: avoid;
+  }
+}
+body > .plate.paper-wash-lead img,
+body:has(> :is(.chapter-title, .chapter-opener, .hero) ~ .plate)
+  > .plate:not(.plate ~ .plate) img {
+  display: block; width: 100%; height: auto;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%201000%20400%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22ink%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%22.78%22%20stop-color%3D%22white%22%2F%3E%3Cstop%20offset%3D%22.9%22%20stop-color%3D%22white%22%20stop-opacity%3D%22.86%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22white%22%20stop-opacity%3D%220%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cpath%20fill%3D%22url(%23ink)%22%20d%3D%22M0%200H1000V360L982%20359%20968%20370%20947%20364%20928%20381%20903%20378%20880%20389%20857%20374%20840%20380%20819%20365%20800%20371%20774%20387%20755%20380%20735%20390%20715%20371%20697%20378%20678%20364%20655%20367%20636%20356%20616%20369%20592%20368%20572%20385%20551%20375%20531%20386%20507%20396%20482%20384%20462%20387%20438%20374%20419%20378%20399%20364%20381%20372%20360%20361%20340%20367%20316%20354%20295%20362%20270%20355%20251%20368%20226%20374%20207%20369%20184%20387%20162%20378%20139%20385%20119%20367%2099%20372%2080%20359%2061%20366%2040%20351%2023%20358%200%20353Z%22%2F%3E%3C%2Fsvg%3E") center / 100% 100% no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%201000%20400%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22ink%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%22.78%22%20stop-color%3D%22white%22%2F%3E%3Cstop%20offset%3D%22.9%22%20stop-color%3D%22white%22%20stop-opacity%3D%22.86%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22white%22%20stop-opacity%3D%220%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cpath%20fill%3D%22url(%23ink)%22%20d%3D%22M0%200H1000V360L982%20359%20968%20370%20947%20364%20928%20381%20903%20378%20880%20389%20857%20374%20840%20380%20819%20365%20800%20371%20774%20387%20755%20380%20735%20390%20715%20371%20697%20378%20678%20364%20655%20367%20636%20356%20616%20369%20592%20368%20572%20385%20551%20375%20531%20386%20507%20396%20482%20384%20462%20387%20438%20374%20419%20378%20399%20364%20381%20372%20360%20361%20340%20367%20316%20354%20295%20362%20270%20355%20251%20368%20226%20374%20207%20369%20184%20387%20162%20378%20139%20385%20119%20367%2099%20372%2080%20359%2061%20366%2040%20351%2023%20358%200%20353Z%22%2F%3E%3C%2Fsvg%3E") center / 100% 100% no-repeat;
+}
+.plate .caption, .plate figcaption {
+  text-align: center; margin: .38em 1em 0; padding: 0; border: 0;
+  font-size: .72em; opacity: .78;
+}
+.caption-en, figcaption .en { display: block; margin-left: 0; }

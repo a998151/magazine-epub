@@ -1,0 +1,17 @@
+/* 现代书刊 */
+body { line-height: 1.87; font-family: "Songti SC", "Noto Serif CJK SC", serif; }
+body h1, body .chapter-title, body .book-title {
+  text-align: left; font-family: "PingFang SC", "Noto Sans CJK SC", sans-serif;
+  font-weight: 800; letter-spacing: -.025em; margin: .4em 0 .75em; padding: .48em 0 0;
+  border: 0; border-top: .12em solid currentColor;
+}
+.chapter-opener { border: 0; padding-bottom: .55em; }
+.chapter-index, .book-title em { color: inherit; }
+.plate { margin: 1em 0 1.6em; }
+.plate img { width: 100%; }
+.plate .caption, .plate figcaption {
+  font-family: "PingFang SC", "Noto Sans CJK SC", sans-serif; font-size: .74em;
+  text-align: left; letter-spacing: .06em; border: 0; border-bottom: 1px solid currentColor;
+  margin: .65em 0 0; padding: 0 0 .58em;
+}
+.caption-en, figcaption .en { display: block; margin-left: 0; font-style: normal; }

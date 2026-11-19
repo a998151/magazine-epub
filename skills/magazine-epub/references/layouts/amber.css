@@ -1,0 +1,18 @@
+/* 琥珀档案 */
+body { line-height: 1.82; font-family: "Songti SC", "Noto Serif CJK SC", serif; }
+body h1, body .chapter-title, body .book-title {
+  text-align: left; font-weight: 800; letter-spacing: .07em;
+  margin: .55em 0 .65em; padding: .18em 0 .24em .55em;
+  border: 0; border-left: .2em solid #9c6a2b;
+}
+.chapter-opener { border-bottom: 1px solid #9c6a2b; padding-bottom: .75em; }
+.plate {
+  margin: 1.15em 0 1.75em; padding: .5em; border: 1px solid #9c6a2b;
+  box-sizing: border-box;
+}
+.plate img { width: 100%; }
+.plate .caption, .plate figcaption {
+  border: 0; border-top: 1px solid #9c6a2b; margin: .6em 0 0; padding: .55em .25em .1em;
+  font-size: .8em; text-align: left;
+}
+.caption-en, figcaption .en { display: block; margin-left: 0; }

@@ -1,0 +1,16 @@
+/* 青墨留白 */
+body { line-height: 1.94; font-family: "Songti SC", "Noto Serif CJK SC", serif; }
+body h1, body .chapter-title, body .book-title {
+  text-align: center; font-weight: 600; letter-spacing: .15em;
+  margin: .75em 0 1em; border: 0; padding: 0;
+}
+.chapter-opener { border: 0; padding-bottom: .8em; }
+.chapter-index, .chapter-en, .byline { text-align: center; }
+.chapter-index, .book-title em { color: inherit; }
+.plate { margin: 1.5em 0 2em; }
+.plate img { width: 92%; margin: 0 auto; }
+.plate .caption, .plate figcaption {
+  text-align: center; margin: .85em auto 0; border: 0; padding: 0;
+  font-size: .77em; opacity: .84;
+}
+.caption-en, figcaption .en { display: block; margin-left: 0; }

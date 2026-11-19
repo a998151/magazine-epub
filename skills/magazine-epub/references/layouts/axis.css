@@ -1,0 +1,25 @@
+/* 纵轴画册：窄屏保留横排，宽屏竖题与大图并列。 */
+body { line-height: 1.91; }
+body h1.chapter-title, body .book-title {
+  margin: .4em 0 .75em; padding: .28em .18em .28em 0; border: 0;
+  border-bottom: .08em solid #9b492f; font-size: 2.7em;
+  font-weight: 700; line-height: 1.12; letter-spacing: .07em; text-align: left;
+}
+.plate { margin: 0 0 2em; }
+.plate img { display: block; width: 100%; height: auto; }
+.plate .caption, .plate figcaption {
+  margin: .55em 0 0; padding: 0 0 .55em; border: 0; border-bottom: 1px solid #9b492f;
+  font-size: .78em; text-align: right; letter-spacing: .03em;
+}
+.caption-en, figcaption .en { display: block; margin-left: 0; }
+@media screen and (min-width: 640px) {
+  @supports selector(body:has(> .plate)) {
+    body:has(> .plate) > h1.chapter-title {
+      float: left; writing-mode: vertical-rl; margin: 0 4% 0 0;
+      padding: .05em .3em .4em; border: 0; border-right: .07em solid #9b492f;
+      font-size: 3.4em; line-height: 1; letter-spacing: .15em;
+    }
+    body:has(> h1.chapter-title) > .plate { display: flow-root; }
+    body:has(> .plate) > p { clear: both; }
+  }
+}
