@@ -35,6 +35,14 @@ body.paper-wash-ready > .paper-wash-lead {
   padding: 0 !important;
 }
 """
+FIRST_SECTION_EDGE = b"""
+/* Match the horizontal paragraph margins used on continuation pages. */
+body.paper-wash-ready.chapter-first-section > p {
+  margin-left: 0;
+  margin-right: 0;
+}
+"""
+BODY_CLASS = re.compile(rb"""(<(?:[\w.-]+:)?body\b[^>]*?\sclass\s*=\s*)(['"])([^'"]*)\2""")
 
 
 def raster(data, output_type, max_side, max_bytes, matte, force=False):
@@ -87,6 +95,56 @@ def change_links(text, document, renamed):
         return match[1] + part.replace(name, posixpath.basename(renamed[old]), 1) + match[3]
 
     return LINK.sub(rewrite, text)
+
+
+def mark_chapter_opening(data):
+    """Return a marked chapter opening, or None for other pages."""
+    if b"paper-wash-ready" not in data:
+        return None
+    body = ET.fromstring(data).find("{*}body")
+    if body is None:
+        return None
+    classes = body.get("class", "").split()
+    if "paper-wash-ready" not in classes or "front-matter" in classes:
+        return None
+    number = next((heading for heading in body.findall("{*}h3")
+                   if "paper-wash-first-section" in heading.get("class", "").split()), None)
+    if number is not None:
+        if "".join("".join(number.itertext()).split()) not in {"1", "１", "第1节", "第一节"}:
+            return None
+    else:
+        heading = body.find("{*}h1")
+        if ("chapter-page" not in classes or heading is None or
+                "paper-wash-title" not in heading.get("class", "").split()):
+            return None
+    if "chapter-first-section" in classes:
+        return data
+    revised, count = BODY_CLASS.subn(
+        lambda match: match[1] + match[2] + match[3] + b" chapter-first-section" + match[2],
+        data, count=1,
+    )
+    if count != 1:
+        raise ValueError("画入纸面章首页的 body 类无法更新")
+    return revised
+
+
+def apply_outer_edge(incoming, text_files, substitutions):
+    _, spine, stylesheet = read_book(incoming)
+    css = substitutions.get(stylesheet, incoming.read(stylesheet))
+    if OUTER_EDGE not in css:
+        css += OUTER_EDGE
+    for path in dict.fromkeys(spine):
+        if path not in text_files:
+            continue
+        original = substitutions.get(path, text_files[path].encode("utf-8"))
+        revised = mark_chapter_opening(original)
+        if revised is None:
+            continue
+        if revised != original:
+            substitutions[path] = revised
+        if FIRST_SECTION_EDGE not in css:
+            css += FIRST_SECTION_EDGE
+    substitutions[stylesheet] = css
 
 
 def pack(source, target, max_side, max_bytes, book_cap, *, no_outer_margins=False):
@@ -145,10 +203,7 @@ def pack(source, target, max_side, max_bytes, book_cap, *, no_outer_margins=Fals
             if original != updated:
                 substitutions[path] = updated.encode("utf-8")
         if no_outer_margins:
-            _, _, stylesheet = read_book(incoming)
-            css = substitutions.get(stylesheet, incoming.read(stylesheet))
-            if OUTER_EDGE not in css:
-                substitutions[stylesheet] = css + OUTER_EDGE
+            apply_outer_edge(incoming, text_files, substitutions)
         if renamed or dropped:
             updated_package = change_links(package.toxml(), opf_path, renamed)
             substitutions[opf_path] = updated_package.encode("utf-8")
@@ -214,7 +269,7 @@ def main():
     parser.add_argument("--max-image-kib", type=int, default=160, help="非封面 JPG/PNG 单张体积上限")
     parser.add_argument("--max-book-mib", type=float, help="可选的整本体积上限")
     parser.add_argument("--no-outer-margins", action="store_true",
-                        help="清除书内页面外边距和画入纸面章首外框，保留正文版心")
+                        help="清除书内外边距，以及画入纸面已识别的章首正文额外横向边距")
     args = parser.parse_args()
     if args.max_side < 1 or args.max_image_kib < 1 or (args.max_book_mib is not None and args.max_book_mib <= 0):
         parser.error("图片尺寸与体积限制须大于零")

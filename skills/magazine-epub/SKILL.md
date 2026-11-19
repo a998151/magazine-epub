@@ -32,7 +32,7 @@ description: |
 
 ### 版式试样与换版
 
-用户尚未指定版式时，提供 [版式预设](references/layouts.md) 中的选项。看效果时，用 `layout_style.py --preview` 从同一源 EPUB 临时打包各预设，再渲染各包里的同一实际页面。用户选定后，从该源 EPUB 用同一构建路径另存成品。画入纸面会把已有插画的横幅取景、透明湿边和章题花饰做进 EPUB，并把图注移到首个章页末尾。新书先完成 EPUB 构建再应用预设。
+用户尚未指定版式时，提供 [版式预设](references/layouts.md) 中的选项。看效果时，用 `layout_style.py --preview` 从同一源 EPUB 临时打包各预设，再渲染各包里的同一实际页面。用户选定后，从该源 EPUB 用同一构建路径另存成品。画入纸面会把已有插画的横幅取景、原湿边和章题花饰做进 EPUB，并把图注移到首个章页末尾。新书先完成 EPUB 构建再应用预设。
 
 ### 0. 开工前确认是否生成插画
 
@@ -131,7 +131,7 @@ python3 scripts/build_epub.py --config config.json
 python3 scripts/kindle_compact.py book.epub -o book_kindle.epub
 ```
 
-依赖 Pillow。非封面 JPG/PNG 默认长边最多 1100 px、单张最多 160 KiB，并在写出前核对最终体积。画入纸面的湿边合成到浅纸色 JPEG，章题花饰保留，包内仅清理可确认已替换且无引用的原图副本。用户要求贴边时加 `--no-outer-margins` 清除书内页边距和画入纸面章首的外圈留白，沿用原版式的正文内侧间距。详见 [Kindle 轻量化参数](references/layouts.md#kindle-轻量化)。
+依赖 Pillow。非封面 JPG/PNG 默认长边最多 1100 px、单张最多 160 KiB，并在写出前核对最终体积。画入纸面的原湿边合成到浅纸色 JPEG，章题花饰保留，包内仅清理可确认已替换且无引用的原图副本。`--no-outer-margins` 清除书内外边距和画入纸面章首容器的外圈留白，并取消有编号的第 1 小节或独立配图章首正文额外的段落左右留白。交付时称为「书内零外边距」，实机贴屏须单独验证。详见 [Kindle 轻量化参数](references/layouts.md#kindle-轻量化)。
 
 ### 5. 视觉验证（不能跳）
 
@@ -143,7 +143,7 @@ cd <unpacked-final-epub> && python3 -m http.server 8767 --bind 127.0.0.1
 
 用浏览器截图检查卷首和至少一个正常章节，核对插画、正文连续性和首字下沉。画入纸面额外检查窄屏通栏、湿边、章题花饰、图注位置，以及目录是否跳到图前。浏览器结果作为网页预览交付，实际观察到的设备分页另行记录。
 
-Kindle 轻量版以最终压缩包为验收输入，检查正文左右留白、插画细节和目录链接，并记录压缩前后整包体积与最大单张插图体积。贴边模式额外检查章首图铺满可用版心，并核对正文内侧间距。Kindle 的设备边距设置见 [亚马逊显示设置说明](https://digprjsurvey.amazon.com/csad/help/node/T5Y94BzSCGwm0vd75W)。
+Kindle 轻量版以最终压缩包为验收输入，检查正文左右留白、插画细节和目录链接，并记录压缩前后整包体积与最大单张插图体积。书内零外边距模式同时检查章首图铺满可用版心，以及章首正文相对自身容器的段落边距。有编号小节时，再对照同章第 1、2 小节。浏览器结果只记录为书内版心验证。Kindle 的设备边距设置见 [亚马逊显示设置说明](https://digprjsurvey.amazon.com/csad/help/node/T5Y94BzSCGwm0vd75W)。
 
 ### 6. 交付
 

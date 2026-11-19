@@ -38,7 +38,7 @@ python3 scripts/layout_style.py book.epub --preset amber -o book_amber.epub
 
 ### 画入纸面与电纸书兼容
 
-安装 Pillow 后运行 `python3 scripts/layout_style.py book.epub --preset paper-wash -o book_wash.epub`。脚本复用已有章首插画，横图取景约为 2:1，窄幅原画保留自身比例。已有大面积下缘留白时优先裁取上部，保留人物和主体。透明湿边写入 PNG，章题花饰作为实图入包。实际 XHTML 按章首图、章题、花饰、正文的顺序排列，图注移到当前章页末尾。已有章首锚点移到图前，正文、图注内容和原始插画文件都保留。
+安装 Pillow 后运行 `python3 scripts/layout_style.py book.epub --preset paper-wash -o book_wash.epub`。脚本复用已有章首插画，横图取景约为 2:1，窄幅原画保留自身比例。已有大面积下缘留白时优先裁取上部，保留人物和主体。默认使用原湿边，保留插画下缘不规则的墨迹轮廓，只在靠近纸面的窄带淡出。透明边写入 PNG，章题花饰作为实图入包。实际 XHTML 按章首图、章题、花饰、正文的顺序排列，图注移到当前章页末尾。已有章首锚点移到图前，正文、图注内容和原始插画文件都保留。
 
 预览和验收时检查横幅取景有没有切到主体、窄屏是否仍然通栏、目录到章首是否从大图开始。水墨边和花饰靠包内图片显示，阅读器设置会影响页边距和分页。
 
@@ -53,4 +53,4 @@ python3 scripts/layout_style.py book_kindle.epub --preview kindle.html --layouts
 
 画入纸面将湿边合成在已有的浅纸色上，以 JPEG 保存主图，并同步更新章节和资源清单的图片引用。只清理与生成图校验值对应、且确认无引用的原图副本。浅纸色作为位图背景，换深色主题时边底仍呈浅色。亚马逊说明其 Kindle 电子书转换会把透明区域转为白色。[Kindle 重排版图像指南](https://kdp.amazon.com/en_US/help/topic/G75V4YX5X8GRGXWV)
 
-选用贴边时加 `--no-outer-margins`。脚本在已登记的杂志主样式表中清零 `@page` 外边距和画入纸面章首容器的外圈间距，沿用标题、正文、图注各自的版心宽度和段落样式。Kindle 设备仍可按自己的页边距设置重排。[亚马逊显示设置说明](https://digprjsurvey.amazon.com/csad/help/node/T5Y94BzSCGwm0vd75W)
+要清除书内外边距时加 `--no-outer-margins`。脚本清零 `@page` 外边距和章首容器的外圈间距。有编号的第 1 小节，以及带 `chapter-page` 标记和章题的独立配图章首，均移除画入纸面样式额外的段落左右留白。首行缩进、标题和图注仍按各自原样式显示。Kindle `Aa → 布局 → 页边距` 控制设备留白。交付说明区分书内满栏与实机贴屏。[亚马逊显示设置说明](https://digprjsurvey.amazon.com/csad/help/node/T5Y94BzSCGwm0vd75W) · [Kindle Create 导出说明](https://kdp.amazon.com/en_US/help/topic/GUGQ4WDZ92F733GC)
