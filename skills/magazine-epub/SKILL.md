@@ -123,6 +123,16 @@ python3 scripts/build_epub.py --config config.json
 把那句摘出来排成独立块——摘走句子等于改动原文，所以只在用户明确要求时才做。
 填了但逐字匹配不上时脚本会告警，此时回原文核对字，不要放宽成模糊匹配。
 
+### 4.1 Kindle 成品轻量化
+
+目标是 Kindle 时，在完成所有版式修改之后、预览之前，用 `scripts/kindle_compact.py` 从已打包 EPUB 另存轻量版。已有 EPUB 只需减小体积时也直接运行这一步。
+
+```bash
+python3 scripts/kindle_compact.py book.epub -o book_kindle.epub
+```
+
+依赖 Pillow。非封面 JPG/PNG 默认长边最多 1100 px、单张最多 160 KiB，并在写出前核对最终体积。画入纸面的湿边合成到浅纸色 JPEG，章题花饰保留，包内仅清理可确认已替换且无引用的原图副本。用户要求贴边时加 `--no-outer-margins` 清除书内页边距和画入纸面章首的外圈留白，沿用原版式的正文内侧间距。详见 [Kindle 轻量化参数](references/layouts.md#kindle-轻量化)。
+
 ### 5. 视觉验证（不能跳）
 
 从最终交付的 EPUB 取页面做截图核对。用 [版式预览命令](references/layouts.md#给用户选版) 指定 `--layouts original`，或把实际成品解包到临时目录后起本地服务：
@@ -133,17 +143,18 @@ cd <unpacked-final-epub> && python3 -m http.server 8767 --bind 127.0.0.1
 
 用浏览器截图检查卷首和至少一个正常章节，核对插画、正文连续性和首字下沉。画入纸面额外检查窄屏通栏、湿边、章题花饰、图注位置，以及目录是否跳到图前。浏览器结果作为网页预览交付，实际观察到的设备分页另行记录。
 
+Kindle 轻量版以最终压缩包为验收输入，检查正文左右留白、插画细节和目录链接，并记录压缩前后整包体积与最大单张插图体积。贴边模式额外检查章首图铺满可用版心，并核对正文内侧间距。Kindle 的设备边距设置见 [亚马逊显示设置说明](https://digprjsurvey.amazon.com/csad/help/node/T5Y94BzSCGwm0vd75W)。
+
 ### 6. 交付
 
-给出 `.epub` 成品；另附一个内含同名 epub 的 `.zip`（Kindle 的 Send to Kindle 邮件通道常拒收
-epub 附件，收 zip 更稳）。zip 用 Python `zipfile` 写，并置 `flag_bits |= 0x800`（UTF-8 文件名标志），
-否则中文名在部分环境下会乱码。
+给出 `.epub` 成品。Kindle 交付优先提供轻量 EPUB，可通过 [Send to Kindle](https://www.amazon.com/sendtokindle) 上传。按用户要求附 ZIP 时，使用 Python `zipfile` 保留压缩包里的中文文件名。
 
 ## Output contract
 
 - 一个 `.epub`（两种模式均通过正文逐字比对、结构自检和从成品包取页的截图验收；`mimetype` 必须是首条且 `ZIP_STORED`，manifest/spine 的引用目标均有效）
 - 插画按用户选择验收：生成模式检查新图风格、同一角色的跨图辨识度、图注、显示及入包引用；不生成模式检查无新增插图、图注或空图引用，原有图片仍可显示
-- 一个同名 `.zip` 包装（可选，Kindle 邮件上传用）
+- Kindle 成品默认通过轻量化和成品预览，交付时注明压缩前后体积；有明确整包预算时使用 `--max-book-mib` 校验
+- 一个同名 `.zip` 包装（用户需要时提供）
 - 一个可重跑的构建目录。新书保留配置 JSON、构建脚本和样式表。换版保留输入 EPUB 路径、所选预设和构建命令。
 - 交付时说明：图数 / 体积 / 哪些页做了结构改动 / Kindle 上的已知差异
 
@@ -154,7 +165,7 @@ epub 附件，收 zip 更稳）。zip 用 Python `zipfile` 写，并置 `flag_bi
 - **抽言未匹配**：回原文逐字核对，不是脚本 bug
 - **章节文件没找到标题**：源书的标题可能是 `<p class="calibre_6">` 而不是 `<h1>`，脚本会自动升级；
   若仍失败说明该文件结构特殊，手工确认后再改
-- **图片体积超标**：调小配置里的 `image_max_width`（默认 1400）与 `image_quality`（默认 80）重跑
+- **图片体积超标**：在 Kindle 轻量化阶段调整 `--max-side` 或 `--max-image-kib`，用最终 EPUB 联合检查图像细节和整包体积。其他版式的初次构建可调 `image_max_width` 与 `image_quality`
 - **Kindle 上排版走样**：KPF 是独立转换引擎，不是浏览器，字体与分页由它重算。
   需要像素级一致就用 WebView 阅读器（epubjs）；Kindle 上只能保证结构（插图、图注、抽言、章号）在
 
@@ -166,9 +177,7 @@ Kindle KPF 对双栏/多栏与 @page 的支持差异。
 
 ## Windows (win32) platform notes
 
-脚本本身是 Python 3 跨平台（图片压缩优先 Pillow，退回 macOS `sips`，再退回原样复制）。
-路径用正斜杠或 `Path` 对象，不要拼 `\`。本机若没有 `sips` 且没有 Pillow，
-安装 Pillow 即可：`py -m pip install pillow`。
+脚本使用 Python 3，路径用正斜杠或 `Path` 对象。Kindle 轻量化和画入纸面需要 Pillow，Windows 可用 `py -m pip install Pillow` 安装。
 起预览服务的命令在 Windows 上是 `py -m http.server 8767 --bind 127.0.0.1`。
 
 ## Examples
@@ -180,4 +189,4 @@ Output:
 2. `inspect_epub.py` 输出 → 确认 7 个正文章节、2 个盗版广告页、1 页重复英文目录
 3. 抽 7 章意象 → 复用已有 4 张、按所选风格补 3 张 → 落盘
 4. 写配置 → `build_epub.py` → 结构和正文自检通过
-5. 起本地服务做截图验收 → 交付 epub + zip
+5. 打包后先另存 Kindle 轻量版 → 从轻量版做截图验收 → 交付 EPUB 和体积对比
