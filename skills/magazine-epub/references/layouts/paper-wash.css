@@ -1,38 +1,97 @@
-/* 画入纸面：章首图先于章题，湿墨下缘过渡到阅读器纸色。 */
-body h1.chapter-title, body .chapter-opener h1, body .book-title {
+/* 章首图与湿边来自 EPUB 资源，标题和正文沿用普通文档流。 */
+body.paper-wash-ready {
+  margin: 0;
+  padding: 0;
+  line-height: 1.95;
+}
+body.paper-wash-ready > * {
+  margin-left: 7.3%;
+  margin-right: 7.3%;
+}
+body.paper-wash-ready > .paper-wash-lead {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  page-break-inside: avoid;
+  page-break-after: avoid;
+}
+.paper-wash-ready .paper-wash-lead img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  margin: 0;
+}
+body.paper-wash-ready > .paper-wash-title {
+  margin: .58em 7.3% .46em;
+  padding: 0;
+  border: 0;
   text-align: center;
-  font-family: "Kaiti SC", STKaiti, KaiTi, "Songti SC", serif;
-  font-size: 1.85em; line-height: 1.3; letter-spacing: .13em;
-  margin: .6em 0 .8em; padding: 0 0 .85em; border: 0;
-  background: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20180%2016%22%3E%3Cpath%20d%3D%22M0%208h61m58%200h61M70%208h40m-31%200%2011-5%2011%205-11%205z%22%20fill%3D%22none%22%20stroke%3D%22%238b7950%22%20stroke-width%3D%221%22%2F%3E%3C%2Fsvg%3E") center bottom / 7.1em auto no-repeat;
+  page-break-after: avoid;
 }
-.chapter-opener { border: 0; text-align: center; }
-.chapter-index, .chapter-en, .byline { text-align: center; }
-body .book-title em { color: inherit; }
-
-/* 普通文档流可供阅读器回退，支持选择器的阅读器可将旧书第一张章首图提至顶端。 */
-body > .plate.paper-wash-lead {
-  margin: 0 0 .85em; padding: 0; border: 0; page-break-after: avoid;
+body.paper-wash-ready > h1.paper-wash-title,
+.paper-wash-ready .paper-wash-title h1,
+.paper-wash-ready .paper-wash-title .book-title {
+  font-family: "Songti SC", "Noto Serif CJK SC", STSong, serif;
+  font-weight: 700;
+  font-size: 1.75em;
+  line-height: 1.3;
+  letter-spacing: .16em;
+  text-align: center;
+  text-indent: 0;
 }
-@supports selector(body:has(> .plate)) {
-  body:has(> :is(.chapter-title, .chapter-opener, .hero) ~ .plate) {
-    display: flex; flex-direction: column;
-  }
-  body:has(> :is(.chapter-title, .chapter-opener, .hero) ~ .plate)
-    > .plate:not(.plate ~ .plate) {
-    order: -1; margin: 0 0 .85em; padding: 0; border: 0;
-    page-break-after: avoid;
-  }
+body.paper-wash-ready > h1.chaptercaption {
+  font-size: 1.37em;
+  letter-spacing: .04em;
 }
-body > .plate.paper-wash-lead img,
-body:has(> :is(.chapter-title, .chapter-opener, .hero) ~ .plate)
-  > .plate:not(.plate ~ .plate) img {
-  display: block; width: 100%; height: auto;
-  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%201000%20400%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22ink%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%22.78%22%20stop-color%3D%22white%22%2F%3E%3Cstop%20offset%3D%22.9%22%20stop-color%3D%22white%22%20stop-opacity%3D%22.86%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22white%22%20stop-opacity%3D%220%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cpath%20fill%3D%22url(%23ink)%22%20d%3D%22M0%200H1000V360L982%20359%20968%20370%20947%20364%20928%20381%20903%20378%20880%20389%20857%20374%20840%20380%20819%20365%20800%20371%20774%20387%20755%20380%20735%20390%20715%20371%20697%20378%20678%20364%20655%20367%20636%20356%20616%20369%20592%20368%20572%20385%20551%20375%20531%20386%20507%20396%20482%20384%20462%20387%20438%20374%20419%20378%20399%20364%20381%20372%20360%20361%20340%20367%20316%20354%20295%20362%20270%20355%20251%20368%20226%20374%20207%20369%20184%20387%20162%20378%20139%20385%20119%20367%2099%20372%2080%20359%2061%20366%2040%20351%2023%20358%200%20353Z%22%2F%3E%3C%2Fsvg%3E") center / 100% 100% no-repeat;
-  mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%201000%20400%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22ink%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%22.78%22%20stop-color%3D%22white%22%2F%3E%3Cstop%20offset%3D%22.9%22%20stop-color%3D%22white%22%20stop-opacity%3D%22.86%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22white%22%20stop-opacity%3D%220%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cpath%20fill%3D%22url(%23ink)%22%20d%3D%22M0%200H1000V360L982%20359%20968%20370%20947%20364%20928%20381%20903%20378%20880%20389%20857%20374%20840%20380%20819%20365%20800%20371%20774%20387%20755%20380%20735%20390%20715%20371%20697%20378%20678%20364%20655%20367%20636%20356%20616%20369%20592%20368%20572%20385%20551%20375%20531%20386%20507%20396%20482%20384%20462%20387%20438%20374%20419%20378%20399%20364%20381%20372%20360%20361%20340%20367%20316%20354%20295%20362%20270%20355%20251%20368%20226%20374%20207%20369%20184%20387%20162%20378%20139%20385%20119%20367%2099%20372%2080%20359%2061%20366%2040%20351%2023%20358%200%20353Z%22%2F%3E%3C%2Fsvg%3E") center / 100% 100% no-repeat;
+.paper-wash-ready .chapter-number {
+  display: block;
+  margin: 0 0 .28em;
+  font-size: 1.25em;
+  line-height: 1.3;
 }
-.plate .caption, .plate figcaption {
-  text-align: center; margin: .38em 1em 0; padding: 0; border: 0;
-  font-size: .72em; opacity: .78;
+.paper-wash-ready .chapter-rule { display: none; }
+.paper-wash-title .chapter-index { font-size: .92em; color: inherit; opacity: .72; }
+.paper-wash-title .book-title { margin-top: .4em; }
+.paper-wash-title .book-title em { color: inherit; }
+.paper-wash-ready .work-title,
+.paper-wash-ready > .byline { text-align: center; }
+.paper-wash-ready .work-title { margin-top: .5em; }
+body.paper-wash-ready > .paper-wash-rule {
+  margin: 0 7.3% .72em;
+  text-align: center;
+  line-height: 0;
+  page-break-after: avoid;
 }
-.caption-en, figcaption .en { display: block; margin-left: 0; }
+.paper-wash-rule img { width: 7.8em; max-width: 50%; height: auto; }
+body.paper-wash-ready > p:not(.source-spacing) {
+  margin: 0 7.3% .56em;
+  line-height: 1.95;
+  text-align: justify;
+}
+body.paper-wash-ready > h3.paper-wash-first-section {
+  font-size: .85em;
+  margin-top: .55em;
+  margin-bottom: .65em;
+  opacity: .72;
+}
+body.paper-wash-ready > .paper-wash-caption {
+  margin: 1.45em 7.3% 2em;
+  padding-top: .65em;
+  border-top: 1px solid currentColor;
+  font-size: .72em;
+  line-height: 1.55;
+  text-align: left;
+  text-indent: 0;
+  opacity: .82;
+  page-break-inside: avoid;
+}
+.paper-wash-caption > span { display: block; }
+.paper-wash-caption .caption-en,
+.paper-wash-caption .en { font-style: italic; }
+@media (prefers-color-scheme: light) {
+  body.paper-wash-ready { background: #f8f8ef; }
+  body.paper-wash-ready > h1.paper-wash-title,
+  .paper-wash-ready .paper-wash-title h1,
+  .paper-wash-ready .paper-wash-title .book-title { color: #625739; }
+}
