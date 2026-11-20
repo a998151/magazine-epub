@@ -1,8 +1,6 @@
 # magazine-epub
 
-把一本已有的 EPUB 电子书，重排成可以直接上架的**杂志级成品**：结构语义化、每章配一张专属插画、生成刊头开篇页，按 EPUB 规范重新打包，可直接发到 Kindle。
-
-这是一个跨 harness 的 **Agent Skill**（agents.md 规范），附带两个确定性脚本：体检器 + 配置驱动构建器。
+把已有 EPUB 重排成杂志版，按需加上统一风格的章首插画、双语图注和刊头页。「画入纸面」的 Kindle 轻量版默认使用纯白底湿边。
 
 ![刊头开篇页](docs/01-opening.svg)
 
@@ -15,8 +13,8 @@
 | 问题 | 表现 | 本 skill 的处理 |
 | --- | --- | --- |
 | 排版是转换器默认值 | 标题是 `<p>` 不是 `<h1>`；章节靠空行分隔；链接是写死的 `#00c` 蓝 | 标题语义化，样式表整体重写 |
-| 夹带盗版推广 | 整页公众号广告页、版权页里的微信号 | 按关键词整段清除 |
-| 没有视觉 | 纯文字，读起来像 txt | 每章配一张统一风格的插画 + 双语图注 + 刊头开篇页 |
+| 夹带推广内容 | 公众号广告段落或广告页 | 先核对命中的内容，再清理确认是广告的段落或页面 |
+| 需要章首配图 | 已有图片不足 | 先复用适合的原图，按用户确认的范围补图 |
 
 外加一条容易被忽略的：**很多阅读器会把书里的样式盖掉**。epubjs 会用 `!important` 强制字体与行距，会给 `<h1>` 注入装饰，还会让首字下沉打到标题的第一个字上。这份样式表和配套文档都按这些坑设计过。
 
@@ -67,12 +65,12 @@ cp -R magazine-epub/skills/magazine-epub ~/.agents/skills/
 - 「这本书要传 Kindle，帮我排一下版」
 - 「给这本 EPUB 加刊头开篇页和章节插图」
 
-agent 会自动走完：体检 → 确认章节表与插画意象 → 批量生成插画 → 构建 → 自检 → 截图验收 → 打包交付。
+先确认版式和是否生成插画。构建、打包和校验完成后，预览直接从交付的 EPUB 渲染。
 
 ### 方式二：手动跑脚本
 
 ```bash
-cd skill
+cd skills/magazine-epub
 
 # 1) 体检：章节表、样式类分布、推广词、重复目录页
 python3 scripts/inspect_epub.py /path/to/book.epub
@@ -84,15 +82,13 @@ $EDITOR config.json
 python3 scripts/build_epub.py --config config.json
 ```
 
-配置字段全表见 [`skill/references/recipes.md`](skill/references/recipes.md)，最小示例：
+以下配置为一个章节加图。完整字段见 [构建配置](skills/magazine-epub/references/recipes.md)。
 
 ```json
 {
   "source": "/path/to/book.epub",
+  "workdir": "/path/to/new-build-dir",
   "output": "/path/to/book_magazine.epub",
-  "book": { "title": "书名", "title_accent": "高亮片段", "deck": "导语", "image": "illust-opener" },
-  "drop_pages": ["1.html"],
-  "ad_patterns": ["本书由", "公众号"],
   "chapters": [{
     "file": "index_split_003.html", "no": "01", "cn": "秋", "en": "Autumn",
     "image": "illust-coast", "alt": "插图描述",
@@ -104,29 +100,15 @@ python3 scripts/build_epub.py --config config.json
 
 ---
 
-## 工作原理
+## 「画入纸面」Kindle 轻量版
 
-```
-inspect_epub.py                build_epub.py
-      │                              │
-      ├─ spine 顺序 / 章节名          ├─ 清理推广段落
-      ├─ 每章样式类分布               ├─ 标题 p → h1（语义化）
-      ├─ 推广词命中                   ├─ 前置页标记 front-matter
-      └─ 疑似重复目录页               ├─ 生成刊头开篇页 opener.html
-                                     ├─ 章节扉页：章号 + 章名 + 插图 + 图注
-                                     ├─ 插画压图入包 images/
-                                     ├─ manifest / spine / NCX / guide 同步更新
-                                     ├─ 注入 magazine.css
-                                     ├─ 打包（mimetype 首条且不压缩）
-                                     └─ 结构自检 → 不过则退出码非 0
+```bash
+python3 scripts/layout_style.py book_magazine.epub --preset paper-wash -o book_wash.epub
+python3 scripts/kindle_compact.py book_wash.epub -o book_kindle.epub
+python3 scripts/layout_style.py book_kindle.epub --preview kindle.html --layouts original
 ```
 
-自检里有一条**正文逐字比对**：构建脚本在动手改结构前给每章正文存底稿，打包后再逐字比一次，
-不一致就报错。这是「不改正文」这条承诺的证据——正则改写很容易悄悄吃掉段落。
-
-**插画怎么配**：先读每章首段和全文关键词计数，找出该章**最具体**的物象（"矿×37 + 教堂钟声" → 画矿与钟楼，而不是画风景），已有插画先复用，缺了才补。一次批量生成时重复同一段风格描述词，模型才会给出一套成图。
-
-**一条硬规矩**：只改版式与结构，不改正文。抽言块、分栏、重排段落都属于改书，除非明确要求否则一律不做——读者要的是原文照原样读。
+轻量化默认将非封面 JPG/PNG 限在长边 1100 px、单张 160 KiB 内。画入纸面的湿边保留窄过渡，外围清成纯白并写入 PNG。如需透明版，从 `book_wash.epub` 加 `--wet-edge alpha` 另存。 [版式和轻量化参数](skills/magazine-epub/references/layouts.md)
 
 ---
 
@@ -134,11 +116,11 @@ inspect_epub.py                build_epub.py
 
 | 阅读器 | 表现 |
 | --- | --- |
-| Kindle（KPF） | 独立转换引擎，不是浏览器。结构（插图、图注、章号、标题层级）保留；字体与分页由 KPF 重算，与浏览器预览必然有差异。**双栏在 Kindle 上体验很差**，本 skill 默认单栏 |
+| Kindle | 使用单栏。实际字体、边距与分页以实机为准 |
 | epubjs（WebView） | 字号是 body 上的行内样式，能覆盖；font-family / line-height 被 `!important` 强制；`<h1>` 会被注入装饰伪元素；首字下沉默认命中页面第一个段落 |
 | Apple Books / 微信读书 / Kobo | 基本按标准 CSS 走 |
 
-完整踩坑记录见 [`skill/references/compatibility.md`](skill/references/compatibility.md)。
+完整说明见 [阅读器兼容性](skills/magazine-epub/references/compatibility.md)。
 
 ---
 
@@ -150,19 +132,22 @@ magazine-epub/
 ├── docs/                      演示截图
 └── skills/
     └── magazine-epub/         目录名 = skill 名，可直接 cp 到任意 skills 根目录
-        ├── SKILL.md           触发条件 / 执行流程 / 输出契约 / 失败处理
+        ├── SKILL.md           工作流程与验收
         ├── agents/openai.yaml 跨 harness 展示元信息
         ├── scripts/
         │   ├── inspect_epub.py 体检器
-        │   └── build_epub.py   配置驱动构建器（打包 + 自检）
+        │   ├── build_epub.py   配置驱动构建器
+        │   ├── layout_style.py 换版与成品预览
+        │   └── kindle_compact.py Kindle 轻量化
         └── references/
             ├── magazine.css   杂志版样式表（构建时注入）
             ├── page.css       @page 分页样式
             ├── recipes.md     配置字段表 + 插画/图注策划方法
+            ├── layouts.md     版式预设与 Kindle 轻量化参数
             └── compatibility.md 阅读器兼容要点
 ```
 
-**依赖**：Python 3（标准库即可）。图片压缩优先 Pillow，其次 macOS `sips`，最后原样复制。插画生成走 `mcode-tools` 的 `connector__matrix__generate_image`。
+**依赖**：Python 3。画入纸面与 Kindle 轻量化需要 Pillow。新增插画使用所在环境可用的图像生成工具。
 
 ---
 

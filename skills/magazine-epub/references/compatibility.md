@@ -74,17 +74,10 @@ body.front-matter > p:first-of-type:not(:empty)::first-letter {
 
 ---
 
-## Kindle（KPF 转换引擎）
+## Kindle
 
-- Kindle 用自己的引擎重排，**不是浏览器**：书里的 `@page`、`column-count`、伪元素基本不可靠
-- **双栏在 Kindle 上阅读体验很差**（要来回跳视线）。要上 Kindle 就单栏
-- `@page` 的 margin 只在部分设备生效，实际左右留白由 KPF 决定
-- 图片：Kindle 轻量版按 [轻量化参数](layouts.md#kindle-轻量化) 处理；亚马逊说明透明区域在转换时会转为白色。[Kindle 重排版图像指南](https://kdp.amazon.com/en_US/help/topic/G75V4YX5X8GRGXWV)
-- 章节插画会成为整页大图，Kindle 会自动缩放到屏宽，视觉上等价于"宽度等于正文栏"
-- 字体：Kindle 自带中文衬线（"默认"字体），书里写 `Songti SC` 等系统字体在 Kindle 上不生效，
-  会回落到 Kindle 自带字体——这通常是可接受的
-- 首字下沉：KPF 支持 `:first-letter`，但只能作用于每章第一段，所以把标题做成 `<h1>` 同样重要
-- 转换后版面与浏览器预览必然有差异，只能保证**结构**（插图、图注、章号、标题层级）在
+- Kindle 会重算可用宽度、字体和分页。`@page`、多列与伪元素在转换后可能变化。书内满栏以成品 EPUB 验证，设备屏边与分页以实机为准。
+- 亚马逊说明透明区会在转换中填白。「画入纸面」Kindle 输出用纯白 PNG 与浅色页面衔接。深色主题下，PNG 的白色边缘仍会显示为白色。[Kindle 重排版图像指南](https://kdp.amazon.com/en_US/help/topic/G75V4YX5X8GRGXWV) · [轻量化参数](layouts.md#kindle-轻量化)
 
 ---
 

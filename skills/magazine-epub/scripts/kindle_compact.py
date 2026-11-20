@@ -17,14 +17,15 @@ from xml.parsers.expat import ExpatError
 from xml.etree import ElementTree as ET
 
 from layout_style import member_path, read_book, read_package
+from paper_wash import RULE
 
 
 MIB = 1024 ** 2
 IMAGE_TYPES = {".jpeg", ".jpg", ".png"}
 TEXT_TYPES = {".xhtml", ".html", ".htm", ".xml", ".opf", ".ncx", ".svg", ".css", ".smil", ".js"}
 LEAD = re.compile(r"(?:^|/)paper-wash/lead-([0-9a-f]{24})\.png$")
-LINK = re.compile(r"""(\b(?:src|href|poster|data)\s*=\s*["'])([^"']+)(["'])""", re.I)
-PAPER = "#f8f8ef"  # The light page color in the paper-wash stylesheet.
+PAPER_RULE = re.compile(rb"(body\.paper-wash-ready\s*\{\s*background:\s*)"
+                        rb"(?:#f8f8ef|#ffffff|transparent)(\s*;\s*\})")
 OUTER_EDGE = b"""
 /* magazine-epub: zero authored outer margins */
 @page { margin: 0 !important; }
@@ -45,13 +46,13 @@ body.paper-wash-ready.chapter-first-section > p {
 BODY_CLASS = re.compile(rb"""(<(?:[\w.-]+:)?body\b[^>]*?\sclass\s*=\s*)(['"])([^'"]*)\2""")
 
 
-def raster(data, output_type, max_side, max_bytes, matte, force=False):
+def raster(data, output_type, max_side, max_bytes, *, preserve_alpha=False):
     from PIL import Image, ImageOps
 
     with Image.open(io.BytesIO(data)) as source:
         transparent = "A" in source.getbands() or "transparency" in source.info
         rotation = source.getexif().get(274, 1)
-        if (not force and not transparent and rotation == 1 and
+        if ((not transparent or preserve_alpha) and rotation == 1 and
                 source.mode != "CMYK" and max(source.size) <= max_side and len(data) <= max_bytes):
             return data
         if getattr(source, "n_frames", 1) > 1:
@@ -59,8 +60,11 @@ def raster(data, output_type, max_side, max_bytes, matte, force=False):
         image = ImageOps.exif_transpose(source)
         if transparent:
             foreground = image.convert("RGBA")
-            image = Image.new("RGB", foreground.size, matte)
-            image.paste(foreground, mask=foreground.getchannel("A"))
+            if preserve_alpha:
+                image = foreground
+            else:
+                image = Image.new("RGB", foreground.size, "white")
+                image.paste(foreground, mask=foreground.getchannel("A"))
         elif image.mode not in {"L", "RGB"}:
             image = image.convert("RGB")
 
@@ -82,19 +86,6 @@ def raster(data, output_type, max_side, max_bytes, matte, force=False):
             raise ValueError(f"在 {floor}px 下无法达到 {max_bytes // 1024} KiB，请复核图中细节或调整预算")
         size = max(floor, round(long_side * .85))
         image.thumbnail((size, size), Image.Resampling.LANCZOS)
-
-
-def change_links(text, document, renamed):
-    def rewrite(match):
-        part = match[2]
-        old = member_path(document, part)
-        if old not in renamed:
-            return match[0]
-        # Only the suffix of the generated name changes. Keep relative paths and fragments.
-        name = posixpath.basename(old)
-        return match[1] + part.replace(name, posixpath.basename(renamed[old]), 1) + match[3]
-
-    return LINK.sub(rewrite, text)
 
 
 def mark_chapter_opening(data):
@@ -147,7 +138,9 @@ def apply_outer_edge(incoming, text_files, substitutions):
     substitutions[stylesheet] = css
 
 
-def pack(source, target, max_side, max_bytes, book_cap, *, no_outer_margins=False):
+def pack(source, target, max_side, max_bytes, book_cap, *, no_outer_margins=False, wet_edge="white"):
+    if wet_edge not in {"white", "alpha"}:
+        raise ValueError("湿边模式必须为 white 或 alpha")
     with zipfile.ZipFile(source) as incoming, tempfile.TemporaryFile() as packed:
         entries = incoming.infolist()
         names = incoming.namelist()
@@ -168,9 +161,6 @@ def pack(source, target, max_side, max_bytes, book_cap, *, no_outer_margins=Fals
                    "cover-image" in node.getAttribute("properties").split() or
                    Path(path).stem.casefold() == "cover")}
         leads = {name: match[1] for name in names if (match := LEAD.search(name))}
-        renamed = {name: name[:-4] + ".jpg" for name in leads}
-        if set(renamed.values()) & set(names):
-            raise ValueError("湿边 JPEG 的目标路径已存在")
         suffixes = {name: Path(name).suffix.lower() for name in names}
         text_files = {name: incoming.read(name).decode("utf-8")
                       for name in names if name != opf_path and suffixes[name] in TEXT_TYPES}
@@ -182,10 +172,8 @@ def pack(source, target, max_side, max_bytes, book_cap, *, no_outer_margins=Fals
         hashes = set(leads.values())
 
         for path, item in items.items():
-            if path in renamed:
-                item.setAttribute("href", item.getAttribute("href")[:-4] + ".jpg")
-                item.setAttribute("media-type", "image/jpeg")
-            elif (path in suffixes and suffixes[path] in IMAGE_TYPES and path not in covers
+            if (path in suffixes and suffixes[path] in IMAGE_TYPES and path not in covers
+                  and path not in leads
                   and not scripted and hashlib.sha256(incoming.read(path)).hexdigest()[:24] in hashes):
                 item_id = item.getAttribute("id")
                 basename = posixpath.basename(path)
@@ -198,22 +186,24 @@ def pack(source, target, max_side, max_bytes, book_cap, *, no_outer_margins=Fals
                 manifest.removeChild(item)
                 dropped.add(path)
 
-        for path, original in text_files.items():
-            updated = change_links(original, path, renamed) if renamed else original
-            if original != updated:
-                substitutions[path] = updated.encode("utf-8")
+        if leads:
+            from wet_edge import encode as encode_wet_edge
+
+            _, _, stylesheet = read_book(incoming)
+            page_fill = b"#ffffff" if wet_edge == "white" else b"transparent"
+            css, count = PAPER_RULE.subn(lambda match: match[1] + page_fill + match[2],
+                                       incoming.read(stylesheet))
+            if not count:
+                css += (b"\n@media (prefers-color-scheme: light) {\n"
+                        b"  body.paper-wash-ready { background: " + page_fill + b"; }\n}\n")
+            substitutions[stylesheet] = css
         if no_outer_margins:
             apply_outer_edge(incoming, text_files, substitutions)
-        if renamed or dropped:
-            updated_package = change_links(package.toxml(), opf_path, renamed)
-            substitutions[opf_path] = updated_package.encode("utf-8")
-            remaining = "\n".join(unquote(substitutions.get(path, original.encode()).decode())
-                                  for path, original in text_files.items())
-            if any(posixpath.basename(path) in remaining or posixpath.basename(path) in unquote(updated_package)
-                   for path in renamed):
-                raise ValueError("仍有旧章首 PNG 引用，需检查资源路径")
+        if dropped:
+            substitutions[opf_path] = package.toxml(encoding="utf-8")
 
         stats = []
+        ornament = posixpath.join(posixpath.dirname(opf_path), RULE)
         with zipfile.ZipFile(packed, "w") as outgoing:
             for entry in entries:
                 path = entry.filename
@@ -224,15 +214,15 @@ def pack(source, target, max_side, max_bytes, book_cap, *, no_outer_margins=Fals
                 if data is None:
                     data = incoming.read(entry)
                 if suffixes[path] in IMAGE_TYPES:
-                    filename = renamed.get(path, path)
-                    out_entry.filename = out_entry.orig_filename = filename
                     is_cover = path in covers
                     limit = max(max_side, 1600) if is_cover else max_side
                     budget = max(max_bytes, 256 * 1024) if is_cover else max_bytes
-                    paper_asset = "/paper-wash/" in f"/{path}"
                     try:
-                        data = raster(data, Path(filename).suffix.lower(), limit, budget,
-                                      PAPER if paper_asset else "#fff", force=path in renamed)
+                        if path in leads:
+                            data = encode_wet_edge(data, limit, budget, white=wet_edge == "white")
+                        else:
+                            data = raster(data, suffixes[path], limit, budget,
+                                          preserve_alpha=wet_edge == "alpha" and path == ornament)
                     except (OSError, ValueError) as exc:
                         raise ValueError(f"{path}: {exc}") from exc
                     if not is_cover:
@@ -240,7 +230,7 @@ def pack(source, target, max_side, max_bytes, book_cap, *, no_outer_margins=Fals
                 outgoing.writestr(out_entry, data)
 
         with zipfile.ZipFile(packed) as result:
-            if result.testzip() or result.namelist() != [renamed.get(name, name) for name in names if name not in dropped]:
+            if result.testzip() or result.namelist() != [name for name in names if name not in dropped]:
                 raise ValueError("压缩后的 EPUB 未通过 ZIP 校验")
             _, checked = read_package(result)
             old_spine = [ref.getAttribute("idref") for ref in package.getElementsByTagNameNS("*", "itemref")]
@@ -270,13 +260,15 @@ def main():
     parser.add_argument("--max-book-mib", type=float, help="可选的整本体积上限")
     parser.add_argument("--no-outer-margins", action="store_true",
                         help="清除书内外边距，以及画入纸面已识别的章首正文额外横向边距")
+    parser.add_argument("--wet-edge", choices=("white", "alpha"), default="white",
+                        help="画入纸面湿边使用纯白底（默认）或保留透明通道")
     args = parser.parse_args()
     if args.max_side < 1 or args.max_image_kib < 1 or (args.max_book_mib is not None and args.max_book_mib <= 0):
         parser.error("图片尺寸与体积限制须大于零")
     try:
         pack(args.source, args.output, args.max_side, args.max_image_kib * 1024,
              int(args.max_book_mib * MIB) if args.max_book_mib else None,
-             no_outer_margins=args.no_outer_margins)
+             no_outer_margins=args.no_outer_margins, wet_edge=args.wet_edge)
     except ModuleNotFoundError as exc:
         if exc.name != "PIL":
             raise
